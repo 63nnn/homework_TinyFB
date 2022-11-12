@@ -35,9 +35,10 @@ bool scan_user(string); // friend
 bool scan_fri(string);
 int add_fri(string);
 int del_fri(string);
+void fri_eachOther(string, string);
 void list_fri();
 void add_post(); // post
-void del_post();
+int del_post();
 int list_post(string);
 int scan_like(string); // like
 void dislike_post();
@@ -101,6 +102,7 @@ int main()
                 add_post();
                 break;
             case 5:
+                del_post();
                 break;
             case 6:
                 cout << "Whose post: ";
@@ -176,7 +178,7 @@ int login() // return 0 == shutdown, 1 == success, 2 == error
         uhead->link->preLink = uptr;
         uptr->preLink = ucur;
         ucur = ucur->link;
-        cout << "Create a new account successfully." << endl;
+        cout << ">> Create a new account successfully." << endl;
         return 2;
     case 0:
         return 0;
@@ -237,7 +239,7 @@ int add_fri(string x)
         }
         fscan->link = fptr;
         fscan->link->link = nullptr;
-        cout << "Add a new friend successfully" << endl;
+        cout << ">> Add a new friend successfully" << endl;
     }
     else
     {
@@ -276,14 +278,14 @@ int del_fri(string x)
                 fptr = fscan->link;
                 fscan->link = fscan->link->link;
                 delete fptr;
-                cout << "Delete the friend successfully" << endl;
+                cout << ">> Delete the friend successfully" << endl;
                 return 0;
             }
             fscan = fscan->link;
         }
         delete fscan->link;
         fscan->link = nullptr;
-        cout << "Delete the friend successfully" << endl;
+        cout << ">> Delete the friend successfully" << endl;
     }
     else
     {
@@ -295,7 +297,7 @@ int del_fri(string x)
 void add_post()
 {
     cout << "What do you want to share?(less than 64 letters)\n: ";
-    char keyin[0];
+    char keyin[100];
     cin.get();
     cin.getline(keyin, 64);
     string content = keyin;
@@ -318,7 +320,7 @@ void add_post()
     pscan->link = pptr;
     pptr->preLink = pscan;
     pscan->link->link = nullptr;
-    cout << "The post upload successfully." << endl;
+    cout << ">> The post upload successfully." << endl;
 }
 
 int list_post(string who)
@@ -332,19 +334,19 @@ int list_post(string who)
         {
             post *pptr;
             pptr = whoptr->post->link;
-            if (whoptr->post->link == nullptr) // 沒判斷式就爆炸了，不知道為甚麼，前面還不會這樣
-            {
-                cout << "Empty." << endl;
-                return 0;
-            }
-            do
+            // if (whoptr->post->link == nullptr)
+            // {
+            //     cout << "Empty." << endl;
+            //     return 0;
+            // }
+            while (pptr != nullptr)
             {
                 cout << "Post" << pptr->s << endl;
                 cout << pptr->author << ": " << endl;
                 cout << pptr->content << endl;
                 cout << "-------------------" << endl;
                 pptr = pptr->link;
-            } while (pptr != nullptr);
+            }
             return 0;
         }
         whoptr = whoptr->link;
@@ -356,7 +358,27 @@ int list_post(string who)
     return 0;
 }
 
-void del_post()
+int del_post()
 {
-    ;
+    int snum;
+    cout << "Which post do you want to delete? (Post number): ";
+    cin >> snum;
+    post *pptr;
+    pptr = uptr->post->link;
+    while (pptr != nullptr)
+    {
+        if (pptr->s == snum)
+        {
+            pptr->preLink->link = pptr->link;
+            if (pptr->link != nullptr)
+            {
+                pptr->link->preLink = pptr->preLink;
+            }
+            cout << ">> Delete the post successfully." << endl;
+            return 0;
+        }
+        pptr = pptr->link;
+    }
+    cout << "Error." << endl;
+    return 0;
 }
