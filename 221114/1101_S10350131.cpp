@@ -35,12 +35,12 @@ bool scan_user(string); // friend
 bool scan_fri(string);
 int add_fri(string);
 int del_fri(string);
-void fri_eachOther(string, string);
 void list_fri();
 void add_post(); // post
 int del_post();
 int list_post(string);
 int scan_like(string); // like
+void like_post();
 void dislike_post();
 void list_like();
 
