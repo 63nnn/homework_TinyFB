@@ -30,25 +30,25 @@ user *uhead, *upre, *ucur, *uptr;
 int postSerial = 0;
 
 int login();
-bool scan_user(string); // friend
-bool scan_fri(string);
-int add_fri(string);
-int del_fri(string);
+bool scan_user(string); // friend, para:user
+bool scan_fri(string);  // para:user
+int add_fri(string);    // para:user
+int del_fri(string);    // para:user
 void list_fri();
 void add_post(); // post
 int del_post();
-int list_post(string);
-int scan_like(string); // like
-int like_post(int);
-int dislike_post(int);
-int list_like(int);
+int list_post(string); // para:user
+int like_post(int);    // like, para:postNum
+int dislike_post(int); // para:postNum
+int list_like(int);    // para:postNum
+int disdis(string);    // para:user
 
 int main()
 {
+    // preparation
     uhead = new user;
     uhead->link = nullptr;
     ucur = uhead;
-    // preparation
     uptr = new user;
     // set
     ucur->link = uptr;
@@ -208,18 +208,18 @@ int login() // return 0 == shutdown, 1 == success, 2 == error
     return 2;
 }
 
-bool scan_user(string x)
+bool scan_user(string x) // user exist => true
 {
-    user *scanPtr;
-    scanPtr = uhead->link;
+    user *uscan;
+    uscan = uhead->link;
     do
     {
-        if (scanPtr->account == x)
+        if (uscan->account == x)
         {
             return true;
         }
-        scanPtr = scanPtr->link;
-    } while (scanPtr != uhead->link);
+        uscan = uscan->link;
+    } while (uscan != uhead->link);
     return false;
 }
 
@@ -251,7 +251,7 @@ int add_fri(string x)
         fptr = new friList;
         fptr->name = x;
         fscan = uptr->fri;
-        while (fscan->link != nullptr)
+        while (fscan->link != nullptr) // Find the last one
         {
             fscan = fscan->link;
         }
@@ -282,7 +282,7 @@ int del_fri(string x)
 {
     friList *fscan, *fptr;
     fscan = uptr->fri;
-    if (fscan->link == nullptr)
+    if (fscan->link == nullptr) // nullptr == no friend
     {
         cout << "You don't have any friend." << endl;
         return 0;
@@ -291,11 +291,12 @@ int del_fri(string x)
     {
         while (fscan->link->link != nullptr)
         {
-            if (fscan->link->name == x)
+            if (fscan->link->name == x) // friend's name
             {
                 fptr = fscan->link;
                 fscan->link = fscan->link->link;
                 delete fptr;
+                disdis(x); // dislike
                 cout << ">> Delete the friend successfully" << endl;
                 return 0;
             }
@@ -303,42 +304,7 @@ int del_fri(string x)
         }
         delete fscan->link;
         fscan->link = nullptr;
-        // dislike part
-        user *whoptr;
-        whoptr = uhead->link->link;
-        do
-        {
-            post *pptr;
-            pptr = whoptr->post->link;
-            while (pptr != nullptr)
-            {
-                if (pptr->s == o)
-                {
-                    likeList *lptr;
-                    lptr = pptr->like->link;
-                    while (lptr != nullptr)
-                    {
-                        if (lptr->name == uptr->account)
-                        {
-                            lptr->prelink->link = lptr->link;
-                            if (lptr->link != nullptr)
-                            {
-                                lptr->link->prelink = lptr->prelink;
-                            }
-                        }
-                        lptr = lptr->link;
-                    }
-                    cout << "Disliked." << endl;
-                    return 0;
-                }
-                pptr = pptr->link;
-            }
-            whoptr = whoptr->link;
-        } while (whoptr != uhead->link);
-        cout << "Error." << endl;
-
-        return 0;
-
+        disdis(x); // dislike
         cout << ">> Delete the friend successfully" << endl;
     }
     else
@@ -352,23 +318,27 @@ void add_post()
 {
     cout << "What do you want to share?(less than 64 letters)\n: ";
     char keyin[100];
-    cin.get();
-    cin.getline(keyin, 64);
+    cin.get();              // clean buffer
+    cin.getline(keyin, 64); // whole string
     string content = keyin;
     post *pptr;
     pptr = new post;
-    pptr->author = uptr->account; // author
-    pptr->content = content;      // content
-    likeList *lptr;               // like list head
+    // author
+    pptr->author = uptr->account;
+    // content
+    pptr->content = content;
+    // like list head
+    likeList *lptr;
     lptr = new likeList;
     pptr->like = lptr;
     pptr->like->link = nullptr;
-    pptr->s = postSerial; // the number
+    // the number
+    pptr->s = postSerial;
     postSerial += 1;
     // set
     post *pscan;
     pscan = uptr->post;
-    while (pscan->link != nullptr)
+    while (pscan->link != nullptr) // find last node
     {
         pscan = pscan->link;
     }
@@ -380,21 +350,21 @@ void add_post()
 
 int list_post(string who)
 {
+    if (!scan_fri(who) && who != uptr->account) // permission
+    {
+        cout << "You are not a friend." << endl;
+        return 0;
+    }
     cout << "=====Post List=====" << endl;
     user *whoptr;
     whoptr = uhead->link;
-    do
+    do // find who
     {
         if (whoptr->account == who)
         {
             post *pptr;
             pptr = whoptr->post->link;
-            // if (whoptr->post->link == nullptr)
-            // {
-            //     cout << "Empty." << endl;
-            //     return 0;
-            // }
-            while (pptr != nullptr)
+            while (pptr != nullptr) // print every post
             {
                 cout << "Post" << pptr->s << endl;
                 cout << pptr->author << ": " << endl;
@@ -406,7 +376,7 @@ int list_post(string who)
         }
         whoptr = whoptr->link;
     } while (whoptr != uhead->link);
-    if (whoptr == uhead->link)
+    if (whoptr == uhead->link) // the user doesn't exist
     {
         cout << "Error." << endl;
     }
@@ -420,12 +390,17 @@ int del_post()
     cin >> snum;
     post *pptr;
     pptr = uptr->post->link;
-    while (pptr != nullptr)
+    while (pptr != nullptr) // find the post
     {
         if (pptr->s == snum)
         {
+            if (pptr->author != uptr->account) // permission
+            {
+                cout << "Permission denied." << endl;
+                return 0;
+            }
             pptr->preLink->link = pptr->link;
-            if (pptr->link != nullptr)
+            if (pptr->link != nullptr) // null
             {
                 pptr->link->preLink = pptr->preLink;
             }
@@ -450,6 +425,11 @@ int like_post(int o)
         {
             if (pptr->s == o)
             {
+                if (!scan_fri(whoptr->account) && whoptr->account != uptr->account) // permission
+                {
+                    cout << "You should be friend first." << endl;
+                    return 0;
+                }
                 likeList *lptr, *lscan;
                 lptr = new likeList;
                 lptr->name = uptr->account;
@@ -479,18 +459,23 @@ int list_like(int o)
     user *whoptr;
     whoptr = uhead->link->link;
     cout << "===================" << endl;
-    do
+    do // find the user
     {
         post *pptr;
         pptr = whoptr->post->link;
-        while (pptr != nullptr)
+        while (pptr != nullptr) // find the post
         {
             if (pptr->s == o)
             {
+                if (!scan_fri(whoptr->account) && whoptr->account != uptr->account) // permission
+                {
+                    cout << "You should be friend first." << endl;
+                    return 0;
+                }
                 likeList *lptr;
                 lptr = pptr->like->link;
-                cout << "Post" << pptr->s << "'s likelist:" << endl;
-                while (lptr != nullptr)
+                cout << "Post" << pptr->s << "'s likelist:" << endl; // post000?
+                while (lptr != nullptr)                              // find the last like
                 {
                     cout << lptr->name << endl;
                     lptr = lptr->link;
@@ -510,17 +495,17 @@ int dislike_post(int o)
 {
     user *whoptr;
     whoptr = uhead->link->link;
-    do
+    do // find the user
     {
         post *pptr;
         pptr = whoptr->post->link;
-        while (pptr != nullptr)
+        while (pptr != nullptr) // find the post
         {
             if (pptr->s == o)
             {
                 likeList *lptr;
                 lptr = pptr->like->link;
-                while (lptr != nullptr)
+                while (lptr != nullptr) // find the like
                 {
                     if (lptr->name == uptr->account)
                     {
@@ -536,6 +521,43 @@ int dislike_post(int o)
                 return 0;
             }
             pptr = pptr->link;
+        }
+        whoptr = whoptr->link;
+    } while (whoptr != uhead->link);
+    cout << "Error." << endl;
+
+    return 0;
+}
+
+int disdis(string x)
+{
+    user *whoptr;
+    whoptr = uhead->link->link;
+    do // find the user
+    {
+        if (whoptr->account == x)
+        {
+            post *pptr;
+            pptr = whoptr->post->link;
+            while (pptr != nullptr) // all post
+            {
+                likeList *lptr;
+                lptr = pptr->like->link;
+                while (lptr != nullptr) // find the like
+                {
+                    if (lptr->name == uptr->account)
+                    {
+                        lptr->prelink->link = lptr->link;
+                        if (lptr->link != nullptr)
+                        {
+                            lptr->link->prelink = lptr->prelink;
+                        }
+                    }
+                    lptr = lptr->link;
+                }
+                pptr = pptr->link;
+            }
+            return 0;
         }
         whoptr = whoptr->link;
     } while (whoptr != uhead->link);
