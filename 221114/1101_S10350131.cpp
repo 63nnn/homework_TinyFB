@@ -1,5 +1,4 @@
 #include <iostream>
-#include <iomanip>
 using namespace std;
 
 struct friList
@@ -40,9 +39,9 @@ void add_post(); // post
 int del_post();
 int list_post(string);
 int scan_like(string); // like
-void like_post();
-void dislike_post();
-void list_like();
+int like_post(int);
+int dislike_post(int);
+int list_like(int);
 
 int main()
 {
@@ -65,6 +64,7 @@ int main()
             continue;
         }
         string f;
+        int n;
         bool go = true;
         while (go)
         {
@@ -77,6 +77,9 @@ int main()
             cout << "[4]:add_post" << endl;
             cout << "[5]:delete_post" << endl;
             cout << "[6]:watch_post" << endl;
+            cout << "[7]:like_post" << endl;
+            cout << "[8]:dislike_post" << endl;
+            cout << "[9]:like_list" << endl;
             cout << "do: ";
             int choice;
             cin >> choice;
@@ -108,6 +111,21 @@ int main()
                 cout << "Whose post: ";
                 cin >> f;
                 list_post(f);
+                break;
+            case 7:
+                cout << "Which post: ";
+                cin >> n;
+                like_post(n);
+                break;
+            case 8:
+                cout << "Which post: ";
+                cin >> n;
+                dislike_post(n);
+                break;
+            case 9:
+                cout << "Which post: ";
+                cin >> n;
+                list_like(n);
                 break;
             default:
                 cout << "Please try again." << endl;
@@ -252,12 +270,12 @@ void list_fri()
 {
     friList *fptr;
     cout << "====Friend List====" << endl;
-    fptr = uptr->fri;
-    do
+    fptr = uptr->fri->link;
+    while (fptr != nullptr)
     {
         cout << fptr->name << endl;
         fptr = fptr->link;
-    } while (fptr != nullptr);
+    }
 }
 
 int del_fri(string x)
@@ -285,6 +303,42 @@ int del_fri(string x)
         }
         delete fscan->link;
         fscan->link = nullptr;
+        // dislike part
+        user *whoptr;
+        whoptr = uhead->link->link;
+        do
+        {
+            post *pptr;
+            pptr = whoptr->post->link;
+            while (pptr != nullptr)
+            {
+                if (pptr->s == o)
+                {
+                    likeList *lptr;
+                    lptr = pptr->like->link;
+                    while (lptr != nullptr)
+                    {
+                        if (lptr->name == uptr->account)
+                        {
+                            lptr->prelink->link = lptr->link;
+                            if (lptr->link != nullptr)
+                            {
+                                lptr->link->prelink = lptr->prelink;
+                            }
+                        }
+                        lptr = lptr->link;
+                    }
+                    cout << "Disliked." << endl;
+                    return 0;
+                }
+                pptr = pptr->link;
+            }
+            whoptr = whoptr->link;
+        } while (whoptr != uhead->link);
+        cout << "Error." << endl;
+
+        return 0;
+
         cout << ">> Delete the friend successfully" << endl;
     }
     else
@@ -308,6 +362,7 @@ void add_post()
     likeList *lptr;               // like list head
     lptr = new likeList;
     pptr->like = lptr;
+    pptr->like->link = nullptr;
     pptr->s = postSerial; // the number
     postSerial += 1;
     // set
@@ -380,5 +435,111 @@ int del_post()
         pptr = pptr->link;
     }
     cout << "Error." << endl;
+    return 0;
+}
+
+int like_post(int o)
+{
+    user *whoptr;
+    whoptr = uhead->link->link; // !
+    do
+    {
+        post *pptr;
+        pptr = whoptr->post->link; // !
+        while (pptr != nullptr)
+        {
+            if (pptr->s == o)
+            {
+                likeList *lptr, *lscan;
+                lptr = new likeList;
+                lptr->name = uptr->account;
+                // set
+                lscan = pptr->like;
+                while (lscan->link != nullptr)
+                {
+                    lscan = lscan->link;
+                }
+                lscan->link = lptr;
+                lptr->link = nullptr;
+                lptr->prelink = lscan;
+                cout << "Liked." << endl;
+                return 0;
+            }
+            pptr = pptr->link;
+        }
+        whoptr = whoptr->link;
+    } while (whoptr != uhead->link);
+    cout << "Error." << endl;
+
+    return 0;
+}
+
+int list_like(int o)
+{
+    user *whoptr;
+    whoptr = uhead->link->link;
+    cout << "===================" << endl;
+    do
+    {
+        post *pptr;
+        pptr = whoptr->post->link;
+        while (pptr != nullptr)
+        {
+            if (pptr->s == o)
+            {
+                likeList *lptr;
+                lptr = pptr->like->link;
+                cout << "Post" << pptr->s << "'s likelist:" << endl;
+                while (lptr != nullptr)
+                {
+                    cout << lptr->name << endl;
+                    lptr = lptr->link;
+                }
+                return 0;
+            }
+            pptr = pptr->link;
+        }
+        whoptr = whoptr->link;
+    } while (whoptr != uhead->link);
+    cout << "Error." << endl;
+
+    return 0;
+}
+
+int dislike_post(int o)
+{
+    user *whoptr;
+    whoptr = uhead->link->link;
+    do
+    {
+        post *pptr;
+        pptr = whoptr->post->link;
+        while (pptr != nullptr)
+        {
+            if (pptr->s == o)
+            {
+                likeList *lptr;
+                lptr = pptr->like->link;
+                while (lptr != nullptr)
+                {
+                    if (lptr->name == uptr->account)
+                    {
+                        lptr->prelink->link = lptr->link;
+                        if (lptr->link != nullptr)
+                        {
+                            lptr->link->prelink = lptr->prelink;
+                        }
+                    }
+                    lptr = lptr->link;
+                }
+                cout << "Disliked." << endl;
+                return 0;
+            }
+            pptr = pptr->link;
+        }
+        whoptr = whoptr->link;
+    } while (whoptr != uhead->link);
+    cout << "Error." << endl;
+
     return 0;
 }
